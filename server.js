@@ -250,6 +250,13 @@ app.get("/download/:filename", async function (req, res) {
     const filename = req.params.filename;
     const fileRef = bucket.file(filename);
 
+
+    // TODO: If filename is "undefined", the rest of this code should NOT execute!
+    if (!filename) {
+         console.log("INTERNAL ERROR FILNAME UNDEFINED:", filename);
+        res.status(404)
+            .send("filename undefined, try refreshing!");
+    }
     console.log("Download requested:", filename);
     console.log("Bucket:", bucket.name);
     console.log("Object:", fileRef.name);
