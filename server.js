@@ -110,7 +110,7 @@ function writeTagIntoDB(obj, req) {
     .ref("/apps/" + req.query.appname + "/tags/" + req.query.tagId)
     .set(obj, function (error) {
       if (error) {
-        console.log("ERROR:", error);
+          console.log("ERROR:", error);
       }
     });
 }
@@ -203,7 +203,8 @@ app.post("/upload", upload.single("file"),async function (req, res) {
   console.log(myobj);
   const title = req.body.title;
   const file = req.file;
-  console.log(title);
+    console.log("title",title);
+    console.log("file",file);
 // file.filename = file.originalname;
 //console.log("file.path");
 //console.log(file.path);
@@ -218,12 +219,16 @@ app.post("/upload", upload.single("file"),async function (req, res) {
   var obj = {};
     try {
         const fileRef = bucket.file(file.originalname);
+        console.log("fileRef",fileRef);
 
+        // TODO: There seems to be no error handling here....
         await fileRef.save(file.buffer, {
             metadata: {
-                contentType: file.mimetype,
+                contentType: file.mimetype || "application/octet-stream",
             },
         });
+
+        console.log("Firebase Storage upload successful:", fileRef.name);
 
         // Store a path or URL for later use.
         const filePath = `${bucket.name}/${file.originalname}`;
@@ -231,6 +236,7 @@ app.post("/upload", upload.single("file"),async function (req, res) {
         myobj.taginfo.filePath = filePath;
         myobj.taginfo.message = filePath;
 
+        console.log("myobj about to be written",myobj);
         writeTagIntoDB(myobj.taginfo, fake_req);
     } catch (err) {
         console.error(err);
@@ -239,41 +245,102 @@ app.post("/upload", upload.single("file"),async function (req, res) {
   res.sendStatus(200);
 });
 
+
 app.get("/download/:filename", async function (req, res) {
+    const filename = req.params.filename;
+    const fileRef = bucket.file(filename);
+
+    console.log("Download requested:", filename);
+    console.log("Bucket:", bucket.name);
+    console.log("Object:", fileRef.name);
+
     try {
-        const filename = req.params.filename;
-
-        const fileRef = bucket.file(filename);
-        // Check that the object exists
-        const [exists] = await fileRef.exists();
-
-        if (!exists) {
-            return res.status(404).send("Image not found");
-        }
-
-        // Get metadata so we can send the correct MIME type
         const [metadata] = await fileRef.getMetadata();
+
+        console.log("File found:", {
+            name: metadata.name,
+            size: metadata.size,
+            contentType: metadata.contentType
+        });
 
         res.setHeader(
             "Content-Type",
             metadata.contentType || "application/octet-stream"
         );
 
-        // Stream the image from Google Cloud Storage to the browser
-        fileRef
-            .createReadStream()
-            .on("error", function (error) {
-                console.error("Error reading image:", error);
-                if (!res.headersSent) {
-                    res.status(500).send("Error retrieving image");
-                }
-            })
-            .pipe(res);
+        const stream = fileRef.createReadStream();
+
+        stream.on("error", function (error) {
+            console.error("STREAM ERROR:", error);
+
+            if (res.headersSent) {
+                res.destroy(error);
+            } else {
+                res.status(500).send("Error streaming image");
+            }
+        });
+
+        stream.pipe(res);
+
     } catch (error) {
-        console.error("Error retrieving image:", error);
-        res.status(500).send("Error retrieving image");
-  }
+        console.error("DOWNLOAD ERROR:", {
+            code: error.code,
+            message: error.message,
+            stack: error.stack
+        });
+
+        if (!res.headersSent) {
+            res.status(error.code === 404 ? 404 : 500)
+               .send("Error retrieving image");
+        }
+    }
 });
+
+// app.get("/download/:filename", async function (req, res) {
+//     try {
+//         console.log("IN DOWNLOAD XXXXXXX\n");
+//         const filename = req.params.filename;
+//  //       console.log("req",req);
+
+//         const fileRef = bucket.file(filename);
+
+
+//         console.log("Bucket:", bucket.name);
+//         console.log("Object path:", fileRef.name);
+//         console.log("Storage URI:", `gs://${bucket.name}/${fileRef.name}`);
+
+//         console.log("filename",filename);
+//         // Check that the object exists
+//         const [exists] = await fileRef.exists();
+
+//         if (!exists) {
+//             console.log("Image not found!",filename);
+//             return res.status(404).send("Image not found!");
+//         }
+
+//         // Get metadata so we can send the correct MIME type
+//         const [metadata] = await fileRef.getMetadata();
+
+//         res.setHeader(
+//             "Content-Type",
+//             metadata.contentType || "application/octet-stream"
+//         );
+
+//         // Stream the image from Google Cloud Storage to the browser
+//         fileRef
+//             .createReadStream()
+//             .on("error", function (error) {
+//                 console.error("Error reading image:", error);
+//                 if (!res.headersSent) {
+//                     res.status(500).send("Error retrieving image");
+//                 }
+//             })
+//             .pipe(res);
+//     } catch (error) {
+//         console.error("Error retrieving image:", error);
+//         res.status(500).send("Error retrieving image");
+//   }
+// });
 
 
 
