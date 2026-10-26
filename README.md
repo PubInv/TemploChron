@@ -1,23 +1,23 @@
-# pjournal (but we need a better name)
+# GeoChronicle
 
 This is a system for easily using a phone or computer to upload a geolocated photo to create a spatial and temporal database. The database can then be viewed on a map.
 
 The general purpose is to create a journalistic record that allows study or open source intelligence (OSINT).
 
+## Purpose
 
-## Status
+GeoChronicle is a map in both space ("Geo-") and time ("Chronicle".)  Our goal is to make an easy-to-use smart-phone enabled 
+website that allows a user to document photos and events in their environment which will be permanently stored and sharable to others.
 
-This is a fork of geotagtext, a geotagging tutorial app written by Robert L. Read, Diego Aspinwall, and Neil Martis.
-Currently the only expected author of this fork is Robert L. Read, although he is seeking volunteers!
+This project was born out of the Russia-Ukraine project as a way to document war crimes and atrocities. 
+It has never been used for that purpose yet. We are a small, volunteer open-source team. 
+We intend to make it work for safer applications, like tagging invasive species or trash that needs to be 
+picked up, without losing sight of our ultimate goal of making a safer journalistic tool.
 
-As of March 10th, the project allows you to upload multiple photos and automatically extracts geolocation and time information to place markers on a map.
-A color scale is used to represent time over the range of all photos uploaded.
-Clicking on a marker brings up a photo. The image below was made by walking near Barton Springs in Austin and using an iPhone to take 16 pictures.
-
-![Screen Shot 2022-03-10 at 2 49 43 PM](https://user-images.githubusercontent.com/5296671/157765351-7674ffb8-0fbb-4c3a-9b60-4ad4dd989090.png)
-
-As of right now, the persistence of photos in in the local file system, but the metadata is in firebase. We are going to change this operate on a local install
-of MongoDB.
+Eventually, we want the system to be something that could be securely used without risk to the user.
+That is, a user should be able to take a photo of missile strike which will be documented permanently 
+for journalists and prosecutors, without exposing themselves to harm if their phone is captured 
+by a violent enemy.
 
 
 ## Basic Idea
@@ -34,6 +34,33 @@ record of an event.
 
 In particular, this response was made in response to the invasion of the Ukraine by Russia and
 the potential need for making a journalistic record of that event.
+
+We recently found [Eyewitness to Atrocities](https://www.eyewitness.global/), a similar project, which is not open-source.
+
+
+## Current Features
+
+As of August 3rd, 2026, the project allows you to upload multiple photos and automatically extracts geolocation and time information to place markers on a map.
+A color scale is used to represent time over the range of all photos uploaded.
+Clicking on a marker brings up a photo. The image below was made by walking near Barton Springs in Austin and using an iPhone to take 16 pictures.
+
+![Screen Shot 2022-03-10 at 2 49 43 PM](https://user-images.githubusercontent.com/5296671/157765351-7674ffb8-0fbb-4c3a-9b60-4ad4dd989090.png)
+
+As of right now, the persistence of photos in in the local file system, but the metadata is in firebase. One of our volunteers is currently attempting to store the images in firebase.
+
+We recently found [Eyewitness to Atrocities](https://www.eyewitness.global/) and we're thinking what to do about it. Rob has emailed them asking if we can give them a helping hand.
+
+## Security Features
+
+Although not our focus at present, we eventually want to make a system that can be used to document crimes.
+This may require the expertise of security and cryptography experts.
+Our idea is that if an image is uploaded, we will securely record an indelible timestamp and cryptographic hash 
+of the photo, proving that the photo existed before that date. 
+The photo can then be removed from the user's phone, mitigating personal risk to them.
+
+We believe there are interesting cryptographic issues raised by this. However, fundamentally,
+more documentation makes it harder to hide crimes.  If you are a security expert, we 
+welcome your advise or volunteer effort on this project.
 
 ## New Ideas Based on the March 19th Mini-con
 
