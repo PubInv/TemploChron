@@ -286,6 +286,27 @@ var GLOBAL_POPUP = null;
 const PATH_ID = "chronicle-path";
 var GLOBAL_PATH_POINTS = []; 
 
+const ARROW_ID = "chronicle-arrow";
+
+// Draws a small arrowhead pointing right. Mapbox rotates it to follow the line,
+// so "right" becomes "towards the newer photo".
+function makeArrowImage() {
+  const size = 24;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#555555";
+  ctx.beginPath();
+  ctx.moveTo(4, 4);   // back top
+  ctx.lineTo(20, 12); // tip
+  ctx.lineTo(4, 20);  // back bottom
+  ctx.lineTo(8, 12);  // notch
+  ctx.closePath();
+  ctx.fill();
+  return ctx.getImageData(0, 0, size, size);
+}
+
 function drawChroniclePath(start_ms, end_ms) {
   const pts = GLOBAL_PATH_POINTS
     .filter((p) => Number.isFinite(p.time_ms))
@@ -321,10 +342,27 @@ function drawChroniclePath(start_ms, end_ms) {
       },
       beforeId
     );
+        if (!map.hasImage(ARROW_ID)) map.addImage(ARROW_ID, makeArrowImage());
+    map.addLayer(
+      {
+        id: ARROW_ID,
+        type: "symbol",
+        source: PATH_ID,
+        layout: {
+          "symbol-placement": "line", // arrows follow the line
+          "symbol-spacing": 80,       // one arrow every 80 pixels
+          "icon-image": ARROW_ID,
+          "icon-allow-overlap": true,
+          "icon-ignore-placement": true,
+        },
+      },
+      beforeId
+    );
   }
 }
 
 function removeChroniclePath() {
+  if (map.getLayer(ARROW_ID)) map.removeLayer(ARROW_ID);
   if (map.getLayer(PATH_ID)) map.removeLayer(PATH_ID);
   if (map.getSource(PATH_ID)) map.removeSource(PATH_ID);
   GLOBAL_PATH_POINTS = [];
