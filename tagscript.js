@@ -242,6 +242,7 @@ async function createPhotoUploadTag(file, tags, username, color) {
       var filepath = url;
       const interpolated_color =
         computeTimeInterpolatedColor(GLOBAL_START, GLOBAL_END, e_ms);
+      refreshAllDataDB(GLOBAL_APPNAME);
       showPositionOnPage(position, interpolated_color, filepath, filepath);
     })
     .fail((error) => console.log(error));
