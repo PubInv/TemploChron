@@ -181,6 +181,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           onclick="deleteAllMarkers()">
           Delete All Markers
         </button>
+      <span>
         <button
           id="refresh-all"
           class="center"
@@ -188,6 +189,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           onclick="refreshAllDataDB(GLOBAL_APPNAME)">
           Refresh
         </button>
+        <button
+          id="toggle-path"
+          class="center"
+          type="button"
+          onclick="toggleChroniclePath()">
+          Hide Path
+        </button>
+      </span>
       </div>
         <div id="map"></div>
       </div>

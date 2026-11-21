@@ -287,6 +287,16 @@ const PATH_ID = "chronicle-path";
 var GLOBAL_PATH_POINTS = []; 
 
 const ARROW_ID = "chronicle-arrow";
+var GLOBAL_SHOW_PATH = true;
+
+function toggleChroniclePath() {
+  GLOBAL_SHOW_PATH = !GLOBAL_SHOW_PATH;
+  const v = GLOBAL_SHOW_PATH ? "visible" : "none";
+  if (map.getLayer(PATH_ID)) map.setLayoutProperty(PATH_ID, "visibility", v);
+  if (map.getLayer(ARROW_ID)) map.setLayoutProperty(ARROW_ID, "visibility", v);
+  document.getElementById("toggle-path").textContent =
+    GLOBAL_SHOW_PATH ? "Hide Path" : "Show Path";
+}
 
 // Draws a small arrowhead pointing right. Mapbox rotates it to follow the line,
 // so "right" becomes "towards the newer photo".
@@ -333,7 +343,11 @@ function drawChroniclePath(start_ms, end_ms) {
         id: PATH_ID,
         type: "line",
         source: PATH_ID,
-        layout: { "line-cap": "round", "line-join": "round" },
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+          visibility: GLOBAL_SHOW_PATH ? "visible" : "none",
+        },
         paint: {
           "line-color": "#555555",
           "line-width": 2,
@@ -354,6 +368,7 @@ function drawChroniclePath(start_ms, end_ms) {
           "icon-image": ARROW_ID,
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
+          visibility: GLOBAL_SHOW_PATH ? "visible" : "none",
         },
       },
       beforeId
