@@ -244,6 +244,8 @@ async function createPhotoUploadTag(file, tags, username, color) {
         computeTimeInterpolatedColor(GLOBAL_START, GLOBAL_END, e_ms);
       refreshAllDataDB(GLOBAL_APPNAME);
       showPositionOnPage(position, interpolated_color, filepath, filepath);
+      GLOBAL_PATH_POINTS.push({ lng: lon, lat: lat, time_ms: e_ms });
+      drawChroniclePath();
     })
     .fail((error) => console.log(error));
 }
@@ -282,6 +284,105 @@ function showPositionOnPage(position, color, message, filepath) {
 var GLOBAL_ADDED_LAYERS = [];
 // we will only one popup at a time.
 var GLOBAL_POPUP = null;
+const PATH_ID = "chronicle-path";
+var GLOBAL_PATH_POINTS = []; 
+
+const ARROW_ID = "chronicle-arrow";
+var GLOBAL_SHOW_PATH = true;
+
+function toggleChroniclePath() {
+  GLOBAL_SHOW_PATH = !GLOBAL_SHOW_PATH;
+  const v = GLOBAL_SHOW_PATH ? "visible" : "none";
+  if (map.getLayer(PATH_ID)) map.setLayoutProperty(PATH_ID, "visibility", v);
+  if (map.getLayer(ARROW_ID)) map.setLayoutProperty(ARROW_ID, "visibility", v);
+  document.getElementById("toggle-path").textContent =
+    GLOBAL_SHOW_PATH ? "Hide Path" : "Show Path";
+}
+
+// Draws a small arrowhead pointing right. Mapbox rotates it to follow the line,
+// so "right" becomes "towards the newer photo".
+function makeArrowImage() {
+  const size = 24;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#555555";
+  ctx.beginPath();
+  ctx.moveTo(4, 4);   // back top
+  ctx.lineTo(20, 12); // tip
+  ctx.lineTo(4, 20);  // back bottom
+  ctx.lineTo(8, 12);  // notch
+  ctx.closePath();
+  ctx.fill();
+  return ctx.getImageData(0, 0, size, size);
+}
+
+function drawChroniclePath(start_ms, end_ms) {
+  const pts = GLOBAL_PATH_POINTS
+    .filter((p) => Number.isFinite(p.time_ms))
+    .filter((p) => start_ms == null || (p.time_ms >= start_ms && p.time_ms <= end_ms))
+    .sort((a, b) => a.time_ms - b.time_ms);
+
+  // A line needs at least two points
+  const data = pts.length < 2
+    ? { type: "FeatureCollection", features: [] }
+    : {
+        type: "Feature",
+        geometry: { type: "LineString", coordinates: pts.map((p) => [p.lng, p.lat]) },
+        properties: {},
+      };
+
+  if (map.getSource(PATH_ID)) {
+    map.getSource(PATH_ID).setData(data);
+  } else {
+    map.addSource(PATH_ID, { type: "geojson", data: data });
+    // Insert it underneath the first marker so the dots stay clickable on top
+    const beforeId = GLOBAL_ADDED_LAYERS.length ? GLOBAL_ADDED_LAYERS[0].id : undefined;
+    map.addLayer(
+      {
+        id: PATH_ID,
+        type: "line",
+        source: PATH_ID,
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+          visibility: GLOBAL_SHOW_PATH ? "visible" : "none",
+        },
+        paint: {
+          "line-color": "#555555",
+          "line-width": 2,
+          "line-dasharray": [2, 2],
+        },
+      },
+      beforeId
+    );
+        if (!map.hasImage(ARROW_ID)) map.addImage(ARROW_ID, makeArrowImage());
+    map.addLayer(
+      {
+        id: ARROW_ID,
+        type: "symbol",
+        source: PATH_ID,
+        layout: {
+          "symbol-placement": "line", // arrows follow the line
+          "symbol-spacing": 80,       // one arrow every 80 pixels
+          "icon-image": ARROW_ID,
+          "icon-allow-overlap": true,
+          "icon-ignore-placement": true,
+          visibility: GLOBAL_SHOW_PATH ? "visible" : "none",
+        },
+      },
+      beforeId
+    );
+  }
+}
+
+function removeChroniclePath() {
+  if (map.getLayer(ARROW_ID)) map.removeLayer(ARROW_ID);
+  if (map.getLayer(PATH_ID)) map.removeLayer(PATH_ID);
+  if (map.getSource(PATH_ID)) map.removeSource(PATH_ID);
+  GLOBAL_PATH_POINTS = [];
+}
 function hideBasedOnTimes(start_ms, end_ms) {
   var layers = GLOBAL_ADDED_LAYERS;
   // now interate over sources, checking time!!
@@ -296,6 +397,7 @@ function hideBasedOnTimes(start_ms, end_ms) {
       'visibility',
       v);
   }
+  drawChroniclePath(start_ms, end_ms);
 }
 function removeAllLayers() {
   var layers = GLOBAL_ADDED_LAYERS;
@@ -312,6 +414,7 @@ function removeAllLayers() {
     }
   }
   GLOBAL_ADDED_LAYERS = [];
+  removeChroniclePath();
 }
 // if we embedded the file link, we could make this pop up render it,
 // and then we could have it open the photo in a different page.
@@ -576,7 +679,13 @@ function renderMarkers(v) {
       gt.message,
       gt.date
     );
+    GLOBAL_PATH_POINTS.push({
+      lng: Number(gt.longitude),
+      lat: Number(gt.latitude),
+      time_ms: time_ms,
+    });
   }
+  drawChroniclePath();
 }
 
 function refreshAllDataLS(appname) {
